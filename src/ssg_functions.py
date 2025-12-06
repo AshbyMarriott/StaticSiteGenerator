@@ -17,7 +17,7 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
     """Split text nodes on a delimiter and assign types to the resulting segments.
 
     Given a list of nodes, this function finds text nodes and splits their text
-    on the provided delimiter (e.g., `**` for bold or `*` for italics). Text
+    on the provided delimiter (e.g., `**` for bold or `_` for italics). Text
     segments in even positions remain plain text, while segments in odd
     positions are wrapped with the provided `text_type`.
 
@@ -106,17 +106,24 @@ def split_nodes_image(old_nodes):
         if node.text_type != TextType.TEXT:
             new_nodes.append(node)
         else:
-            matches = extract_markdown_images(node.text)
-            if matches == []:
-                new_nodes.append(node)
-                continue
-            for match in matches:
-                sections = node.text.split(f"![{match[0]}]({match[1]})", 1)
-                if sections[0] != '':
-                    new_nodes.append(TextNode(sections[0], TextType.TEXT))
-                new_nodes.append(TextNode(match[0], TextType.IMAGE, match[1]))
-                if sections[1] != '':
-                    node = TextNode(sections[1], TextType.TEXT)
+            text = node.text
+            matches = extract_markdown_images(text)
+            
+            while matches:
+                alt, url = matches[0]
+
+                full_match = f"![{alt}]({url})"
+                before, after = text.split(full_match, 1)
+
+                if before:
+                    new_nodes.append(TextNode(before, TextType.TEXT))
+                new_nodes.append(TextNode(alt, TextType.IMAGE, url))
+
+                text = after
+                matches = extract_markdown_images(text)
+            
+            if text:
+                new_nodes.append(TextNode(text, TextType.TEXT))
 
     return new_nodes
 
@@ -141,16 +148,33 @@ def split_nodes_link(old_nodes):
         if node.text_type != TextType.TEXT:
             new_nodes.append(node)
         else:
-            matches = extract_markdown_links(node.text)
-            if matches == []:
-                new_nodes.append(node)
-                continue
-            for match in matches:
-                sections = node.text.split(f"[{match[0]}]({match[1]})", 1)
-                if sections[0] != '':
-                    new_nodes.append(TextNode(sections[0], TextType.TEXT))
-                new_nodes.append(TextNode(match[0], TextType.LINK, match[1]))
-                if sections[1] != '':
-                    node = TextNode(sections[1], TextType.TEXT)
+            text = node.text
+            matches = extract_markdown_links(text)
+            
+            while matches:
+                alt, url = matches[0]
+
+                full_match = f"[{alt}]({url})"
+                before, after = text.split(full_match, 1)
+
+                if before:
+                    new_nodes.append(TextNode(before, TextType.TEXT))
+                new_nodes.append(TextNode(alt, TextType.LINK, url))
+
+                text = after
+                matches = extract_markdown_links(text)
+            
+            if text:
+                new_nodes.append(TextNode(text, TextType.TEXT))
 
     return new_nodes
+
+
+def text_to_textnodes(text):
+    textnodes = [TextNode(text, TextType.TEXT)]
+    textnodes = split_nodes_delimiter(textnodes, '**', TextType.BOLD)
+    textnodes = split_nodes_delimiter(textnodes, '_', TextType.ITALIC)
+    textnodes = split_nodes_delimiter(textnodes, '`', TextType.CODE)
+    textnodes = split_nodes_image(textnodes)
+    textnodes = split_nodes_link(textnodes)
+    return textnodes
