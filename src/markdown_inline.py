@@ -178,3 +178,4 @@ def text_to_textnodes(text):
     textnodes = split_nodes_image(textnodes)
     textnodes = split_nodes_link(textnodes)
     return textnodes
+
