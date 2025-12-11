@@ -171,6 +171,27 @@ def split_nodes_link(old_nodes):
 
 
 def text_to_textnodes(text):
+    """Convert plain text into a list of TextNodes with inline markdown processed.
+    
+    Parses a text string and converts it into a list of TextNodes by processing
+    various inline markdown elements. The processing order is:
+    1. Bold text (delimited by '**')
+    2. Italic text (delimited by '_')
+    3. Code text (delimited by '`')
+    4. Images (syntax: ![alt](url))
+    5. Links (syntax: [text](url))
+    
+    Args:
+        text (str): The plain text string containing inline markdown syntax.
+    
+    Returns:
+        list[TextNode]: A list of TextNode objects representing the parsed text
+            with appropriate types assigned (TEXT, BOLD, ITALIC, CODE, IMAGE, LINK).
+            The nodes are ordered to preserve the original text sequence.
+    
+    Raises:
+        Exception: If any delimiter syntax is invalid (e.g., unclosed bold markers).
+    """
     textnodes = [TextNode(text, TextType.TEXT)]
     textnodes = split_nodes_delimiter(textnodes, '**', TextType.BOLD)
     textnodes = split_nodes_delimiter(textnodes, '_', TextType.ITALIC)
