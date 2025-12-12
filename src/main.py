@@ -1,16 +1,15 @@
 from textnode import TextNode, TextType
 from htmlnode import HTMLNode, LeafNode, ParentNode
-from markdown_blocks import markdown_to_blocks,block_to_block_type, strip_ordered_list_prefix, BlockType, strip_paragraph_newlines, strip_codeblock_backticks, extract_heading_level
+from markdown_blocks import markdown_to_blocks,block_to_block_type, strip_ordered_list_prefix, BlockType, strip_paragraph_newlines, strip_codeblock_backticks, extract_heading_level, extract_title
 from markdown_inline import text_to_textnodes
+import os
+import shutil
 
 def main():
     """Main entry point for the static site generator application.
-    
-    Currently serves as a simple test/demo function that creates a TextNode
-    and prints it. This function is executed when the script is run directly.
     """
-    aNode = TextNode('some anchor text', TextType.LINK, 'https://www.boot.dev')
-    print(aNode)
+    copy_directory('static', 'public')
+    generate_page('content/index.md', 'template.html', 'public/index.html')
 
 def text_node_to_html_node(text_node):
     """Convert a TextNode to its corresponding HTML node representation.
@@ -86,7 +85,9 @@ def markdown_to_html_node(markdown):
                 heading_node = ParentNode(tag=f'h{heading_level}', children=text_to_children(heading_text))
                 html_parent_node.children.append(heading_node)
             case BlockType.QUOTE:
-                quote_text = block.strip('> ')
+                quote_lines = block.split('\n')
+                quote_text = [l.strip('> ') for l in quote_lines]
+                quote_text = '\n'.join(quote_text)
                 quote_node = ParentNode(tag='blockquote', children = text_to_children(quote_text))
                 html_parent_node.children.append(quote_node)
             case BlockType.UNORDERED_LIST:
@@ -139,6 +140,35 @@ def text_to_children(text):
         children.append(text_node_to_html_node(textnode))
     return children
 
-        
+def copy_directory(source_dir, target_dir):
+    if os.path.exists(target_dir):
+        shutil.rmtree(target_dir)
+    os.mkdir(target_dir)
+    if os.path.exists(source_dir):
+        dir_list = os.listdir(source_dir)
+        for file in dir_list:
+            if os.path.isfile(os.path.join(source_dir, file)):
+                shutil.copy(os.path.join(source_dir, file), os.path.join(target_dir, file))
+            elif os.path.isdir(os.path.join(source_dir, file)):
+                os.mkdir(os.path.join(target_dir, file))
+                copy_directory(os.path.join(source_dir, file), os.path.join(target_dir, file))
+
+def generate_page(from_path, template_path, dest_path):
+    print(f"Generating page from {from_path} to {dest_path} using {template_path}")
+    with open(from_path, 'r') as file:
+        markdown = file.read()
+    with open(template_path, 'r') as file:
+        template = file.read()
+    html_string = markdown_to_html_node(markdown).to_html()
+    page_title = extract_title(markdown)
+    template = template.replace('{{ Title }}', page_title)
+    template = template.replace('{{ Content }}', html_string)
+    dest_dir = os.path.dirname(dest_path)
+    if not os.path.exists(dest_dir):
+        os.mkdir(dest_dir)
+    with open(dest_path, 'w') as file:
+        file.write(template)
+
+
 if __name__ == "__main__":
     main()

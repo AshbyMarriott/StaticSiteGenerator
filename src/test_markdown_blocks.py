@@ -1,5 +1,5 @@
 import unittest
-from markdown_blocks import markdown_to_blocks, block_to_block_type, BlockType
+from markdown_blocks import markdown_to_blocks, block_to_block_type, BlockType, extract_title
 
 
 class TestMarkdownBlocks(unittest.TestCase):
@@ -86,6 +86,22 @@ This is the heading continued on the next line"""
 3. and is!"""
         block_type = block_to_block_type(block)
         self.assertEqual(block_type, BlockType.ORDERED_LIST)
+
+    def test_extract_title(self):
+        markdown = """# This is a title
+This is a paragraph"""
+        title = extract_title(markdown)
+        self.assertEqual(title, "This is a title")
+
+    def test_extract_title_no_title(self):
+        markdown = """This is a paragraph"""
+        with self.assertRaises(Exception):
+            extract_title(markdown)
+    
+    def test_extract_title_different_headers(self):
+        markdown = """## This is a h2 title"""
+        with self.assertRaises(Exception):
+            extract_title(markdown)
 
 
 if __name__ == "__main__":
