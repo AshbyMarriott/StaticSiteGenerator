@@ -204,6 +204,24 @@ def generate_page(from_path, template_path, dest_path):
         file.write(template)
 
 def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+    """Recursively generate HTML pages from markdown files in a directory.
+    
+    Traverses a directory structure containing markdown files and generates
+    corresponding HTML pages using a template. Markdown files (`.md`) are
+    converted to HTML files (`.html`) in the destination directory, preserving
+    the directory structure.
+    
+    Args:
+        dir_path_content (str): The source directory path containing markdown
+            files and subdirectories to process.
+        template_path (str): The file path to the HTML template file containing
+            '{{ Title }}' and '{{ Content }}' placeholders.
+        dest_dir_path (str): The destination directory path where generated HTML
+            files will be written. The directory structure will be preserved.
+    
+    Raises:
+        ValueError: If `dir_path_content` is not a valid directory path.
+    """
     if not os.path.isdir(dir_path_content):
         raise ValueError(f"Directory {dir_path_content} does not exist")
     if not os.path.isdir(dest_dir_path):

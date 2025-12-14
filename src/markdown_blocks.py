@@ -176,6 +176,21 @@ def strip_codeblock_backticks(text):
 
 
 def extract_title(markdown):
+    """Extract the title from markdown content.
+    
+    Searches for the first line in the markdown that starts with '# ' (a level 1
+    heading) and returns the text content of that heading as the title.
+    
+    Args:
+        markdown (str): The markdown text to extract the title from.
+    
+    Returns:
+        str: The title text with the '# ' prefix removed.
+    
+    Raises:
+        Exception: If no level 1 heading (starting with '# ') is found in the
+            markdown content.
+    """
     lines = markdown.split('\n')
     for line in lines:
         if line.startswith('# '):
