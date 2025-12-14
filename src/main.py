@@ -4,12 +4,16 @@ from markdown_blocks import markdown_to_blocks,block_to_block_type, strip_ordere
 from markdown_inline import text_to_textnodes
 import os
 import shutil
+import sys
 
 def main():
     """Main entry point for the static site generator application.
     """
-    copy_directory('static', 'public')
-    generate_pages_recursive('content', 'template.html', 'public')
+    basepath = '/'
+    if len(sys.argv) > 1:
+        basepath = sys.argv[1]
+    copy_directory('static', 'docs')
+    generate_pages_recursive('content', basepath, 'template.html', 'docs')
 
 def text_node_to_html_node(text_node):
     """Convert a TextNode to its corresponding HTML node representation.
@@ -168,16 +172,21 @@ def copy_directory(source_dir, target_dir):
                 os.mkdir(os.path.join(target_dir, file))
                 copy_directory(os.path.join(source_dir, file), os.path.join(target_dir, file))
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, basepath, template_path, dest_path):
     """Generate an HTML page from markdown content using a template.
     
     Reads markdown content from a source file, converts it to HTML, and injects
     it into an HTML template. The template should contain placeholders '{{ Title }}'
     and '{{ Content }}' which will be replaced with the extracted title and
-    converted HTML content respectively.
+    converted HTML content respectively. Absolute paths in href and src attributes
+    are adjusted to use the provided basepath.
     
     Args:
         from_path (str): The file path to the markdown source file to convert.
+        basepath (str): The base path prefix to use for absolute URLs in the
+            generated HTML. All occurrences of 'href="/' and 'src="/' in the
+            template will be replaced with 'href="{basepath}' and 'src="{basepath}'
+            respectively.
         template_path (str): The file path to the HTML template file containing
             '{{ Title }}' and '{{ Content }}' placeholders.
         dest_path (str): The file path where the generated HTML page should be
@@ -197,23 +206,29 @@ def generate_page(from_path, template_path, dest_path):
     page_title = extract_title(markdown)
     template = template.replace('{{ Title }}', page_title)
     template = template.replace('{{ Content }}', html_string)
+    template = template.replace('href="/', f'href="{basepath}')
+    template = template.replace('src="/', f'src="{basepath}')
     dest_dir = os.path.dirname(dest_path)
     if not os.path.exists(dest_dir):
         os.mkdir(dest_dir)
     with open(dest_path, 'w') as file:
         file.write(template)
 
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+def generate_pages_recursive(dir_path_content, basepath, template_path, dest_dir_path):
     """Recursively generate HTML pages from markdown files in a directory.
     
     Traverses a directory structure containing markdown files and generates
     corresponding HTML pages using a template. Markdown files (`.md`) are
     converted to HTML files (`.html`) in the destination directory, preserving
-    the directory structure.
+    the directory structure. The basepath is passed to each page generation
+    to ensure consistent URL path handling.
     
     Args:
         dir_path_content (str): The source directory path containing markdown
             files and subdirectories to process.
+        basepath (str): The base path prefix to use for absolute URLs in the
+            generated HTML pages. This is passed to `generate_page()` for each
+            markdown file processed.
         template_path (str): The file path to the HTML template file containing
             '{{ Title }}' and '{{ Content }}' placeholders.
         dest_dir_path (str): The destination directory path where generated HTML
@@ -230,9 +245,9 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
         path_src = os.path.join(dir_path_content, file)
         path_dest = os.path.join(dest_dir_path, file)
         if os.path.isfile(path_src) and file.endswith('.md'):
-            generate_page(path_src, template_path, path_dest.replace('.md', '.html'))
+            generate_page(path_src, basepath, template_path, path_dest.replace('.md', '.html'))
         elif os.path.isdir(path_src):
-            generate_pages_recursive(path_src, template_path, path_dest)
+            generate_pages_recursive(path_src, basepath, template_path, path_dest)
 
 if __name__ == "__main__":
     main()
