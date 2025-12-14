@@ -9,7 +9,7 @@ def main():
     """Main entry point for the static site generator application.
     """
     copy_directory('static', 'public')
-    generate_page('content/index.md', 'template.html', 'public/index.html')
+    generate_pages_recursive('content', 'template.html', 'public')
 
 def text_node_to_html_node(text_node):
     """Convert a TextNode to its corresponding HTML node representation.
@@ -141,6 +141,21 @@ def text_to_children(text):
     return children
 
 def copy_directory(source_dir, target_dir):
+    """Recursively copy a directory and all its contents to a target location.
+    
+    Copies all files and subdirectories from the source directory to the target
+    directory. If the target directory already exists, it is removed first before
+    copying. The function recursively handles nested directory structures.
+    
+    Args:
+        source_dir (str): The path to the source directory to copy from.
+        target_dir (str): The path to the target directory to copy to. This directory
+            will be created if it doesn't exist, or removed and recreated if it does.
+    
+    Note:
+        If the source directory doesn't exist, the function will still create the
+        target directory but it will be empty.
+    """
     if os.path.exists(target_dir):
         shutil.rmtree(target_dir)
     os.mkdir(target_dir)
@@ -154,6 +169,25 @@ def copy_directory(source_dir, target_dir):
                 copy_directory(os.path.join(source_dir, file), os.path.join(target_dir, file))
 
 def generate_page(from_path, template_path, dest_path):
+    """Generate an HTML page from markdown content using a template.
+    
+    Reads markdown content from a source file, converts it to HTML, and injects
+    it into an HTML template. The template should contain placeholders '{{ Title }}'
+    and '{{ Content }}' which will be replaced with the extracted title and
+    converted HTML content respectively.
+    
+    Args:
+        from_path (str): The file path to the markdown source file to convert.
+        template_path (str): The file path to the HTML template file containing
+            '{{ Title }}' and '{{ Content }}' placeholders.
+        dest_path (str): The file path where the generated HTML page should be
+            written. The parent directory will be created if it doesn't exist.
+    
+    Note:
+        The function prints a message indicating which files are being used for
+        generation. The title is extracted from the first heading in the markdown
+        content.
+    """
     print(f"Generating page from {from_path} to {dest_path} using {template_path}")
     with open(from_path, 'r') as file:
         markdown = file.read()
@@ -169,6 +203,18 @@ def generate_page(from_path, template_path, dest_path):
     with open(dest_path, 'w') as file:
         file.write(template)
 
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+    if not os.path.isdir(dir_path_content):
+        raise ValueError(f"Directory {dir_path_content} does not exist")
+    if not os.path.isdir(dest_dir_path):
+        os.makedirs(dest_dir_path, exist_ok=True)
+    for file in os.listdir(dir_path_content):
+        path_src = os.path.join(dir_path_content, file)
+        path_dest = os.path.join(dest_dir_path, file)
+        if os.path.isfile(path_src) and file.endswith('.md'):
+            generate_page(path_src, template_path, path_dest.replace('.md', '.html'))
+        elif os.path.isdir(path_src):
+            generate_pages_recursive(path_src, template_path, path_dest)
 
 if __name__ == "__main__":
     main()
