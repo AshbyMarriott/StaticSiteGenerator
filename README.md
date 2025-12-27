@@ -4,7 +4,7 @@
 Developed following the Boot.Dev Course [Build a Static Site Generator in Python](https://www.boot.dev/courses/build-static-site-generator-python)
 
 ## Description
-- Python program that translates Markdown files into HTML and upon completion will deploy to a live URL. I intend to expand on  this project for my portfolio website.
+- Python program that translates Markdown files into HTML and deploys to a live URL. I intend to extend this project for my portfolio website.
 
 ## [Live Github Pages site built with this project](https://ashbymarriott.github.io/StaticSiteGenerator/)
 
